@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: job-hunter-bot
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:rabbitmq}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        default-requeue-rejected: false
+
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      initialize-schema: always
+    properties:
+      org:
+        quartz:
+          job-store-type: jdbc
+          jdbc:
+            initialize-schema: always
+
+jwt:
+  secret: ${JWT_SECRET:mysecret}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+telegram:
+  bot-token: ${TELEGRAM_BOT_TOKEN:dummy}
+  bot-username: ${TELEGRAM_BOT_USERNAME:dummy}
+
+rapidapi:
+  key: ${RAPIDAPI_KEY:dummy}
+  host: ${RAPIDAPI_HOST:dummy}
+
+server:
+  port: 8080

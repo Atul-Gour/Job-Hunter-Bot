@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Hunter Bot</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+               background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+        /* NAV */
+        nav { display: flex; justify-content: space-between; align-items: center;
+              padding: 20px 40px; border-bottom: 1px solid #1e293b; }
+        .logo { font-size: 20px; font-weight: 700; color: #38bdf8; }
+        .nav-links { display: flex; gap: 12px; }
+        .nav-links button { padding: 8px 20px; border-radius: 8px; border: none;
+                            cursor: pointer; font-size: 14px; font-weight: 600; }
+        .btn-ghost { background: transparent; color: #94a3b8; border: 1px solid #334155 !important; }
+        .btn-ghost:hover { background: #1e293b; color: #e2e8f0; }
+        .btn-primary { background: #38bdf8; color: #0f172a; }
+        .btn-primary:hover { background: #7dd3fc; }
+
+        /* HERO */
+        .hero { text-align: center; padding: 80px 20px 60px; }
+        .hero h1 { font-size: 52px; font-weight: 800; line-height: 1.1;
+                   background: linear-gradient(135deg, #38bdf8, #818cf8);
+                   -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: 18px; color: #94a3b8; margin: 20px auto;
+                  max-width: 540px; line-height: 1.7; }
+        .hero-btns { display: flex; gap: 12px; justify-content: center; margin-top: 32px; }
+        .btn-big { padding: 14px 32px; border-radius: 10px; border: none;
+                   cursor: pointer; font-size: 16px; font-weight: 700; }
+        .btn-big-primary { background: #38bdf8; color: #0f172a; }
+        .btn-big-primary:hover { background: #7dd3fc; }
+        .btn-big-ghost { background: transparent; color: #94a3b8;
+                         border: 1px solid #334155 !important; }
+        .btn-big-ghost:hover { background: #1e293b; }
+
+        /* FEATURES */
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                    gap: 20px; max-width: 960px; margin: 0 auto 80px; padding: 0 20px; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 14px;
+                padding: 28px; }
+        .card-icon { font-size: 28px; margin-bottom: 14px; }
+        .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: #f1f5f9; }
+        .card p { font-size: 14px; color: #64748b; line-height: 1.6; }
+
+        /* MODAL OVERLAY */
+        .overlay { display: none; position: fixed; inset: 0;
+                   background: rgba(0,0,0,0.7); z-index: 100;
+                   justify-content: center; align-items: center; }
+        .overlay.active { display: flex; }
+        .modal { background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+                 padding: 36px; width: 100%; max-width: 420px; position: relative; }
+        .modal h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; color: #f1f5f9; }
+        .modal .subtitle { font-size: 14px; color: #64748b; margin-bottom: 24px; }
+        .close-btn { position: absolute; top: 16px; right: 16px; background: none;
+                     border: none; color: #64748b; font-size: 20px; cursor: pointer; }
+        .close-btn:hover { color: #f1f5f9; }
+
+        /* TABS */
+        .tabs { display: flex; gap: 0; margin-bottom: 24px;
+                border-bottom: 1px solid #334155; }
+        .tab { padding: 10px 20px; cursor: pointer; font-size: 14px; font-weight: 600;
+               color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+        .tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+
+        /* FORM */
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 13px; font-weight: 600;
+                color: #94a3b8; margin-bottom: 6px; }
+        input { width: 100%; padding: 11px 14px; background: #0f172a;
+                border: 1px solid #334155; border-radius: 8px; color: #f1f5f9;
+                font-size: 14px; outline: none; }
+        input:focus { border-color: #38bdf8; }
+        .btn-submit { width: 100%; padding: 12px; background: #38bdf8; color: #0f172a;
+                      border: none; border-radius: 8px; font-size: 15px; font-weight: 700;
+                      cursor: pointer; margin-top: 8px; }
+        .btn-submit:hover { background: #7dd3fc; }
+        .btn-submit:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+        .error-msg { color: #f87171; font-size: 13px; margin-top: 10px;
+                     display: none; text-align: center; }
+        .error-msg.show { display: block; }
+        .success-msg { color: #34d399; font-size: 13px; margin-top: 10px;
+                       display: none; text-align: center; }
+        .success-msg.show { display: block; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="logo">Job Hunter Bot</div>
+    <div class="nav-links">
+        <button class="btn-ghost" onclick="showModal('login')">Login</button>
+        <button class="btn-primary" onclick="showModal('signup')">Sign Up Free</button>
+    </div>
+</nav>
+
+<section class="hero">
+    <h1>Your Personal<br>Job Hunting Robot</h1>
+    <p>Automatically finds jobs on LinkedIn, Naukri and Wellfound every 30 minutes
+        and alerts you on Telegram. One tap to apply.</p>
+    <div class="hero-btns">
+        <button class="btn-big btn-big-primary" onclick="showModal('signup')">
+            Get Started Free
+        </button>
+        <button class="btn-big btn-big-ghost" onclick="showModal('login')">
+            Login
+        </button>
+    </div>
+</section>
+
+<div class="features">
+    <div class="card">
+        <div class="card-icon">🔍</div>
+        <h3>Auto Job Discovery</h3>
+        <p>Scans LinkedIn, Naukri and Wellfound every 30 minutes using your keywords.</p>
+    </div>
+    <div class="card">
+        <div class="card-icon">📱</div>
+        <h3>Instant Telegram Alerts</h3>
+        <p>New jobs land directly in your Telegram with Apply, Skip, and Save buttons.</p>
+    </div>
+    <div class="card">
+        <div class="card-icon">⚡</div>
+        <h3>One-Tap Auto Apply</h3>
+        <p>Tap Apply Now and Selenium fills the form and submits for you automatically.</p>
+    </div>
+    <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Application Tracker</h3>
+        <p>Track every application — applied, pending, failed — all in one dashboard.</p>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="closeOnOverlay(event)">
+    <div class="modal">
+        <button class="close-btn" onclick="closeModal()">✕</button>
+
+        <div class="tabs">
+            <div class="tab active" id="tab-signup" onclick="switchTab('signup')">Sign Up</div>
+            <div class="tab" id="tab-login" onclick="switchTab('login')">Login</div>
+        </div>
+
+        <!-- SIGNUP FORM -->
+        <div id="form-signup">
+            <h2>Create Account</h2>
+            <p class="subtitle">Free forever. No credit card needed.</p>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="signup-name" placeholder="Atul Kumar Gour">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="signup-email" placeholder="atul@gmail.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signup-password" placeholder="Min 6 characters">
+            </div>
+            <button class="btn-submit" id="signup-btn" onclick="handleSignup()">
+                Create Account
+            </button>
+            <div class="error-msg" id="signup-error"></div>
+            <div class="success-msg" id="signup-success"></div>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <div id="form-login" style="display:none">
+            <h2>Welcome Back</h2>
+            <p class="subtitle">Login to your account.</p>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="login-email" placeholder="atul@gmail.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="login-password" placeholder="Your password">
+            </div>
+            <button class="btn-submit" id="login-btn" onclick="handleLogin()">
+                Login
+            </button>
+            <div class="error-msg" id="login-error"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API = '';  // empty = same origin, Spring Boot serves both
+
+    function showModal(tab) {
+      document.getElementById('overlay').classList.add('active');
+      switchTab(tab);
+    }
+
+    function closeModal() {
+      document.getElementById('overlay').classList.remove('active');
+    }
+
+    function closeOnOverlay(e) {
+      if (e.target.id === 'overlay') closeModal();
+    }
+
+    function switchTab(tab) {
+      document.getElementById('form-signup').style.display =
+        tab === 'signup' ? 'block' : 'none';
+      document.getElementById('form-login').style.display =
+        tab === 'login' ? 'block' : 'none';
+      document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+      document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+    }
+
+    async function handleSignup() {
+      const name     = document.getElementById('signup-name').value.trim();
+      const email    = document.getElementById('signup-email').value.trim();
+      const password = document.getElementById('signup-password').value;
+      const errEl    = document.getElementById('signup-error');
+      const okEl     = document.getElementById('signup-success');
+      const btn      = document.getElementById('signup-btn');
+
+      errEl.classList.remove('show');
+      okEl.classList.remove('show');
+
+      if (!name || !email || !password) {
+        errEl.textContent = 'Please fill all fields.';
+        errEl.classList.add('show');
+        return;
+      }
+      if (password.length < 6) {
+        errEl.textContent = 'Password must be at least 6 characters.';
+        errEl.classList.add('show');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Creating account...';
+
+      try {
+        const res = await fetch(`${API}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errEl.textContent = data.message || 'Registration failed.';
+          errEl.classList.add('show');
+          return;
+        }
+
+        // save token and redirect to dashboard
+        localStorage.setItem('jwt', data.token);
+        localStorage.setItem('userName', data.name);
+        window.location.href = '/dashboard.html';
+
+      } catch (e) {
+        errEl.textContent = 'Server error. Please try again.';
+        errEl.classList.add('show');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Create Account';
+      }
+    }
+
+    async function handleLogin() {
+      const email    = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const errEl    = document.getElementById('login-error');
+      const btn      = document.getElementById('login-btn');
+
+      errEl.classList.remove('show');
+
+      if (!email || !password) {
+        errEl.textContent = 'Please fill all fields.';
+        errEl.classList.add('show');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Logging in...';
+
+      try {
+        const res = await fetch(`${API}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errEl.textContent = data.message || 'Invalid email or password.';
+          errEl.classList.add('show');
+          return;
+        }
+
+        localStorage.setItem('jwt', data.token);
+        localStorage.setItem('userName', data.name);
+        window.location.href = '/dashboard.html';
+
+      } catch (e) {
+        errEl.textContent = 'Server error. Please try again.';
+        errEl.classList.add('show');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Login';
+      }
+    }
+
+    // redirect if already logged in
+    if (localStorage.getItem('jwt')) {
+      window.location.href = '/dashboard.html';
+    }
+
+    // enter key support
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const signupVisible =
+          document.getElementById('form-signup').style.display !== 'none';
+        if (signupVisible) handleSignup();
+        else handleLogin();
+      }
+    });
+</script>
+</body>
+</html>

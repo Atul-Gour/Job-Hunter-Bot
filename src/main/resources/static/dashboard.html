@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Job Hunter Bot</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+               background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+        nav { display: flex; justify-content: space-between; align-items: center;
+              padding: 18px 40px; border-bottom: 1px solid #1e293b; }
+        .logo { font-size: 18px; font-weight: 700; color: #38bdf8; }
+        .nav-right { display: flex; align-items: center; gap: 16px; }
+        .user-name { font-size: 14px; color: #94a3b8; }
+        .btn-logout { padding: 7px 16px; background: transparent; color: #f87171;
+                      border: 1px solid #7f1d1d; border-radius: 7px; cursor: pointer;
+                      font-size: 13px; }
+        .btn-logout:hover { background: #7f1d1d; }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+
+        h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+        .greeting-sub { color: #64748b; font-size: 14px; margin-bottom: 32px; }
+
+        /* STATS */
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr);
+                 gap: 16px; margin-bottom: 32px; }
+        .stat-card { background: #1e293b; border: 1px solid #334155;
+                     border-radius: 12px; padding: 22px; text-align: center; }
+        .stat-num { font-size: 32px; font-weight: 800; color: #38bdf8; }
+        .stat-label { font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600; }
+
+        /* TELEGRAM CONNECT CARD */
+        .connect-card { background: #1e293b; border: 1px solid #334155;
+                        border-radius: 14px; padding: 28px; margin-bottom: 24px; }
+        .connect-card.linked { border-color: #166534; background: #052e16; }
+        .connect-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .connect-icon { font-size: 28px; }
+        .connect-header h2 { font-size: 17px; font-weight: 700; }
+        .connect-header p { font-size: 13px; color: #64748b; }
+        .badge-linked { display: inline-block; background: #166534; color: #86efac;
+                        font-size: 11px; font-weight: 700; padding: 3px 10px;
+                        border-radius: 20px; margin-left: 8px; }
+        .badge-pending { display: inline-block; background: #7c2d12; color: #fdba74;
+                         font-size: 11px; font-weight: 700; padding: 3px 10px;
+                         border-radius: 20px; margin-left: 8px; }
+        .btn-telegram { display: inline-flex; align-items: center; gap: 8px;
+                        padding: 12px 24px; background: #0088cc; color: #fff;
+                        border: none; border-radius: 9px; font-size: 15px;
+                        font-weight: 700; cursor: pointer; text-decoration: none; }
+        .btn-telegram:hover { background: #0099dd; }
+        .connect-steps { font-size: 13px; color: #64748b; margin-top: 14px; line-height: 1.8; }
+
+        /* PROFILE CARD */
+        .profile-card { background: #1e293b; border: 1px solid #334155;
+                        border-radius: 14px; padding: 28px; margin-bottom: 24px; }
+        .profile-card h2 { font-size: 16px; font-weight: 700; margin-bottom: 20px;
+                           color: #f1f5f9; }
+        .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .field-group label { display: block; font-size: 11px; font-weight: 700;
+                             color: #64748b; text-transform: uppercase;
+                             letter-spacing: 0.05em; margin-bottom: 5px; }
+        .field-val { font-size: 14px; color: #cbd5e1; background: #0f172a;
+                     padding: 9px 13px; border-radius: 7px;
+                     border: 1px solid #1e293b; }
+        .field-val.empty { color: #475569; font-style: italic; }
+        .btn-edit { margin-top: 20px; padding: 10px 22px; background: transparent;
+                    color: #38bdf8; border: 1px solid #38bdf8; border-radius: 8px;
+                    cursor: pointer; font-size: 13px; font-weight: 600; }
+        .btn-edit:hover { background: #38bdf8; color: #0f172a; }
+
+        /* LOADING */
+        .loading { text-align: center; padding: 60px; color: #64748b; }
+        .spinner { width: 32px; height: 32px; border: 3px solid #334155;
+                   border-top-color: #38bdf8; border-radius: 50%;
+                   animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* TOAST */
+        .toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b;
+                 border: 1px solid #334155; border-radius: 10px; padding: 14px 20px;
+                 font-size: 14px; color: #f1f5f9; opacity: 0; transform: translateY(10px);
+                 transition: all 0.3s; z-index: 999; }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { border-color: #166534; color: #86efac; }
+        .toast.error   { border-color: #7f1d1d; color: #fca5a5; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="logo">Job Hunter Bot</div>
+    <div class="nav-right">
+        <span class="user-name" id="nav-name">Loading...</span>
+        <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        Loading your dashboard...
+    </div>
+
+    <div id="content" style="display:none">
+        <h1 id="greeting">Good morning!</h1>
+        <p class="greeting-sub">Here's what's happening with your job hunt.</p>
+
+        <!-- STATS -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-num" id="stat-applied">0</div>
+                <div class="stat-label">Applied</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="stat-pending">0</div>
+                <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="stat-failed">0</div>
+                <div class="stat-label">Failed</div>
+            </div>
+        </div>
+
+        <!-- TELEGRAM CONNECT -->
+        <div class="connect-card" id="connect-card">
+            <div class="connect-header">
+                <div class="connect-icon">📱</div>
+                <div>
+                    <h2>Telegram
+                        <span class="badge-pending" id="link-badge">Not Connected</span>
+                    </h2>
+                    <p>Connect Telegram to receive job alerts and apply with one tap.</p>
+                </div>
+            </div>
+            <div id="connect-action">
+                <a id="telegram-link" class="btn-telegram" href="#" target="_blank"
+                   onclick="onTelegramClick()">
+                    Connect Telegram
+                </a>
+                <div class="connect-steps">
+                    1. Click the button above<br>
+                    2. Telegram opens with your bot<br>
+                    3. Press Start — your account links automatically
+                </div>
+            </div>
+        </div>
+
+        <!-- PROFILE -->
+        <div class="profile-card">
+            <h2>Your Profile</h2>
+            <div class="profile-grid">
+                <div class="field-group">
+                    <label>Name</label>
+                    <div class="field-val" id="p-name">—</div>
+                </div>
+                <div class="field-group">
+                    <label>Email</label>
+                    <div class="field-val" id="p-email">—</div>
+                </div>
+                <div class="field-group">
+                    <label>Phone</label>
+                    <div class="field-val" id="p-phone">—</div>
+                </div>
+                <div class="field-group">
+                    <label>Location</label>
+                    <div class="field-val" id="p-location">—</div>
+                </div>
+                <div class="field-group">
+                    <label>Keywords</label>
+                    <div class="field-val" id="p-keywords">—</div>
+                </div>
+                <div class="field-group">
+                    <label>Min Salary</label>
+                    <div class="field-val" id="p-salary">—</div>
+                </div>
+                <div class="field-group" style="grid-column: 1/-1">
+                    <label>Skills</label>
+                    <div class="field-val" id="p-skills">—</div>
+                </div>
+                <div class="field-group" style="grid-column: 1/-1">
+                    <label>Resume Link</label>
+                    <div class="field-val" id="p-resume">—</div>
+                </div>
+            </div>
+            <button class="btn-edit" onclick="editProfile()">
+                Edit Profile in Telegram →
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const API = '';
+    const jwt = localStorage.getItem('jwt');
+
+    if (!jwt) window.location.href = '/index.html';
+
+    const hour = new Date().getHours();
+    const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast show ${type}`;
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function val(v) {
+      return v ? v : '<span style="color:#475569;font-style:italic">Not set</span>';
+    }
+
+    async function loadDashboard() {
+      try {
+        const res = await fetch(`${API}/api/auth/me`, {
+          headers: { 'Authorization': 'Bearer ' + jwt }
+        });
+        if (res.status === 401) { logout(); return; }
+        const user = await res.json();
+
+        // nav + greeting
+        document.getElementById('nav-name').textContent = user.name || user.email;
+        document.getElementById('greeting').textContent =
+          `${greet}, ${user.name ? user.name.split(' ')[0] : 'there'}!`;
+
+        // profile
+        document.getElementById('p-name').innerHTML     = val(user.name);
+        document.getElementById('p-email').innerHTML    = val(user.email);
+        document.getElementById('p-phone').innerHTML    = val(user.phone);
+        document.getElementById('p-location').innerHTML = val(user.location);
+        document.getElementById('p-keywords').innerHTML = val(user.keywordFilters);
+        document.getElementById('p-salary').innerHTML   =
+          user.salaryFilter ? '₹' + user.salaryFilter : val(null);
+        document.getElementById('p-skills').innerHTML   = val(user.skills);
+        document.getElementById('p-resume').innerHTML   =
+          user.resumeLink
+            ? `<a href="${user.resumeLink}" target="_blank"
+                 style="color:#38bdf8">${user.resumeLink}</a>`
+            : val(null);
+
+        // telegram status
+        if (user.telegramChatId) {
+          document.getElementById('link-badge').textContent = 'Connected';
+          document.getElementById('link-badge').className = 'badge-linked';
+          document.getElementById('connect-card').classList.add('linked');
+          document.getElementById('connect-action').innerHTML =
+            '<p style="color:#86efac;font-size:14px">' +
+            'Your Telegram is connected. Job alerts are active!</p>';
+        } else {
+          await generateTelegramLink();
+        }
+
+        // show content
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+
+      } catch (e) {
+        showToast('Failed to load dashboard', 'error');
+      }
+    }
+
+    async function generateTelegramLink() {
+      try {
+        const res = await fetch(`${API}/api/auth/generate-link-token`, {
+          headers: { 'Authorization': 'Bearer ' + jwt }
+        });
+        const data = await res.json();
+        document.getElementById('telegram-link').href = data.deepLink;
+      } catch (e) {
+        console.error('Could not generate telegram link', e);
+      }
+    }
+
+    function onTelegramClick() {
+      // after user opens Telegram, poll every 3s to check if linked
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        if (attempts > 20) { clearInterval(poll); return; } // stop after 60s
+
+        try {
+          const res = await fetch(`${API}/api/auth/me`, {
+            headers: { 'Authorization': 'Bearer ' + jwt }
+          });
+          const user = await res.json();
+          if (user.telegramChatId) {
+            clearInterval(poll);
+            showToast('Telegram connected successfully!');
+            setTimeout(() => loadDashboard(), 500);
+          }
+        } catch (e) {}
+      }, 3000);
+    }
+
+    function editProfile() {
+      showToast('Open your Telegram bot and use /setup to edit your profile');
+    }
+
+    function logout() {
+      localStorage.removeItem('jwt');
+      localStorage.removeItem('userName');
+      window.location.href = '/index.html';
+    }
+
+    loadDashboard();
+</script>
+</body>
+</html>
