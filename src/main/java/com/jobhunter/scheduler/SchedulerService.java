@@ -14,7 +14,7 @@ public class SchedulerService {
 
     // schedule a fetch job for a user — default every 30 min
     public void scheduleUserJob(Long userId) {
-        scheduleUserJob(userId, "0 */1 * * * ?");
+        scheduleUserJob(userId, "0 */30 * * * ?");
     }
 
     public void scheduleUserJob(Long userId, String cronExpression) {

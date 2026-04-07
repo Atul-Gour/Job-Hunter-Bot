@@ -34,6 +34,7 @@ public class BotCommandHandler {
     private final JobListingRepository jobListingRepository;
     private final RabbitTemplate rabbitTemplate;
     private final ProfileSetupHandler profileSetupHandler;
+    private final RegistrationHandler registrationHandler;
     private final SchedulerService schedulerService;
     private final RedisService redisService;
 
@@ -58,13 +59,22 @@ public class BotCommandHandler {
                 firstName = update.getMessage().getFrom().getFirstName();
             }
 
-            // check if user is mid profile setup
-            boolean handled = profileSetupHandler.handleIfInSetup(chatId, text, bot);
-            if (handled) return;
+            // check if user is in registration flow
+            boolean registrationHandled = registrationHandler.handleIfInRegistration(chatId, text, bot);
+            if (registrationHandled) return;
 
-            // route commands
+            // check if user is mid profile setup
+            boolean setupHandled = profileSetupHandler.handleIfInSetup(chatId, text, bot);
+            if (setupHandled) return;
+
+            // /start can include a deep-link token, e.g., "/start ABC123DEF"
+            if (text.equals("/start") || text.startsWith("/start ")) {
+                handleStart(chatId, firstName, text, bot);
+                return;
+            }
+
+            // route other commands
             switch (text) {
-                case "/start" -> handleStart(chatId, firstName, text, bot);
                 case "/setup"     -> profileSetupHandler.startSetup(chatId, bot);
                 case "/myprofile" -> handleMyProfile(chatId, bot);
                 case "/status"    -> handleStatus(chatId, bot);
@@ -90,13 +100,22 @@ public class BotCommandHandler {
 
         Optional<User> userOpt = userRepository.findByTelegramChatId(chatId);
         if (userOpt.isPresent()) {
+            // User already registered and linked
             sendMainMenu(chatId, "Welcome back, "
                     + userOpt.get().getName() + "!", bot);
         } else {
-            sendText(chatId,
-                    "Welcome " + firstName + " 👋\n\nPlease connect via website.",
-                    bot);
-//            registrationHandler.startRegistration(chatId, firstName, bot);
+            // User not registered - send link to signup page
+            sendText(chatId, """
+                    Welcome 👋
+                    
+                    Please sign up or login on our website first:
+                    
+                    🌐 http://localhost:8080/index.html
+                    
+                    Then click "Connect Telegram" in your dashboard to link your account.
+                    
+                    📱 After linking, you can use all the bot features!
+                    """, bot);
         }
     }
 

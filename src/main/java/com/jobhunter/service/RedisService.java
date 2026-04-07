@@ -64,4 +64,20 @@ public class RedisService {
     public void deleteLinkToken(String token) {
         redisTemplate.delete("linktoken:" + token);
     }
+
+    // Registration data methods
+    public void saveRegistrationData(Long chatId, String key, String value) {
+        redisTemplate.opsForHash().put(
+                "reg:data:" + chatId, key, value);
+        redisTemplate.expire("reg:data:" + chatId, Duration.ofMinutes(30));
+    }
+
+    public String getRegistrationData(Long chatId, String key) {
+        Object value = redisTemplate.opsForHash().get("reg:data:" + chatId, key);
+        return value != null ? value.toString() : null;
+    }
+
+    public void clearRegistrationData(Long chatId) {
+        redisTemplate.delete("reg:data:" + chatId);
+    }
 }

@@ -29,7 +29,8 @@ public class SecurityConfig {
                                 "/",
                                 "/index.html",
                                 "/dashboard.html",
-                                "/api/auth/**",
+                                "/api/auth/register",
+                                "/api/auth/login",
                                 "/bot/webhook"
                         ).permitAll()
                         .anyRequest().authenticated()
