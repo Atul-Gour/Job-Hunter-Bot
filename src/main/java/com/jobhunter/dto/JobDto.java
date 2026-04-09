@@ -12,4 +12,6 @@ public class JobDto {
     private String url;
     private Integer salary;
     private String description;
+    private String employmentType;
+    private String requiredExperience;
 }

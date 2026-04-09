@@ -4,6 +4,9 @@ import com.jobhunter.config.JwtUtil;
 import com.jobhunter.dto.AuthResponse;
 import com.jobhunter.dto.LoginRequest;
 import com.jobhunter.dto.RegisterRequest;
+import com.jobhunter.exception.EmailAlreadyRegisteredException;
+import com.jobhunter.exception.InvalidPasswordException;
+import com.jobhunter.exception.UserNotFoundException;
 import com.jobhunter.model.User;
 import com.jobhunter.repository.UserRepository;
 import com.jobhunter.scheduler.SchedulerService;
@@ -22,7 +25,7 @@ public class UserService {
 
     public AuthResponse register(RegisterRequest request){
         if( userRepository.existsByEmail(request.getEmail()) ){
-            throw new RuntimeException("Email already registered");
+            throw new EmailAlreadyRegisteredException("Email already registered");
         }
 
         User user = new User();
@@ -40,10 +43,10 @@ public class UserService {
     public AuthResponse login( LoginRequest request){
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         if( !passwordEncoder.matches( request.getPassword() , user.getPassword() )){
-            throw new RuntimeException("Invalid password");
+            throw new InvalidPasswordException("Invalid password");
         }
 
         String jwtToken = jwtUtil.generateToken(user.getEmail());
@@ -52,7 +55,7 @@ public class UserService {
 
     public User getByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
     }
 
     public void linkTelegramAccount(String email, Long telegramChatId) {

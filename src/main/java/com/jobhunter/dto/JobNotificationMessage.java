@@ -17,4 +17,6 @@ public class JobNotificationMessage {
     private String url;
     private Integer salary;
     private String description;
+    private String employmentType;
+    private String requiredExperience;
 }

@@ -22,6 +22,9 @@ public class JobListing {
     private String platform;
     private String url;
     private Integer salary;
+    private String employmentType;
+    private String requiredExperience;
+
 
     @Lob
     @Column(columnDefinition = "TEXT")

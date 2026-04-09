@@ -43,23 +43,30 @@ public class NotificationWorker {
             }
 
             // build message text
+            String salaryLabel = message.getSalary() != null
+                    ? String.valueOf(message.getSalary())
+                    : "Not disclosed";
+
             String text = String.format("""
                     New Job Alert!
                     
-                    Role: %s
                     Company: %s
+                    Role: %s
                     Location: %s
-                    Platform: %s
-                    %s
+                    Salary: %s
+                    Employment : %s
+                    Experience Required: %s
+                    Description: %s
                     
                     What would you like to do?
                     """,
-                    message.getTitle(),
                     message.getCompany(),
+                    message.getTitle(),
                     message.getLocation(),
-                    message.getPlatform(),
-                    message.getSalary() != null
-                            ? "Salary: " + message.getSalary() : "Salary: Not disclosed"
+                    salaryLabel,
+                    message.getEmploymentType(),
+                    message.getRequiredExperience(),
+                    message.getDescription()
             );
 
             // inline keyboard buttons

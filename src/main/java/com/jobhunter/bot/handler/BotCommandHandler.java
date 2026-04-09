@@ -105,17 +105,19 @@ public class BotCommandHandler {
                     + userOpt.get().getName() + "!", bot);
         } else {
             // User not registered - send link to signup page
-            sendText(chatId, """
-                    Welcome 👋
-                    
-                    Please sign up or login on our website first:
-                    
-                    🌐 http://localhost:8080/index.html
-                    
-                    Then click "Connect Telegram" in your dashboard to link your account.
-                    
-                    📱 After linking, you can use all the bot features!
-                    """, bot);
+            sendText(chatId,
+                    String.format("""
+                        Welcome %s 👋
+                        
+                        Please sign up or login on our website first:
+                        
+                        🌐 http://localhost:8080/index.html
+                        
+                        Then click "Connect Telegram" in your dashboard to link your account.
+                        
+                        📱 After linking, you can use all the bot features!
+                        """, firstName),
+                    bot );
         }
     }
 
@@ -198,10 +200,19 @@ public class BotCommandHandler {
             case "menu:resume"  -> handleResume(chatId, bot);
             default -> {
                 if (data.contains(":")) {
-                    String[] parts = data.split(":");
+                    String[] parts = data.split(":", 2);
+                    if (parts.length < 2 || parts[0].isBlank() || parts[1].isBlank()) {
+                        log.warn("Ignoring malformed callback data: {}", data);
+                        return;
+                    }
+
                     String action  = parts[0];
-                    Long jobId     = Long.parseLong(parts[1]);
-                    handleJobAction(chatId, action, jobId, bot);
+                    try {
+                        Long jobId = Long.parseLong(parts[1]);
+                        handleJobAction(chatId, action, jobId, bot);
+                    } catch (NumberFormatException e) {
+                        log.warn("Ignoring callback with invalid job id: {}", data);
+                    }
                 }
             }
         }

@@ -13,7 +13,6 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -87,7 +86,9 @@ public class JobFetcherService {
                     listing.getPlatform(),
                     listing.getUrl(),
                     listing.getSalary(),
-                    trimDescription(listing.getDescription())
+                    trimDescription(listing.getDescription()),
+                    listing.getEmploymentType(),
+                    listing.getRequiredExperience()
             );
             rabbitTemplate.convertAndSend(
                     RabbitMQConfig.JOB_EXCHANGE,
@@ -118,9 +119,25 @@ public class JobFetcherService {
                 List<Map> data = (List<Map>) response.get("data");
                 for (Map item : data) {
                     JobDto dto = new JobDto();
+
+                    // Prefer direct salary; fallback to derived min/max when available.
+                    Integer resolvedSalary = resolveSalary(item);
+                    log.info("Salary parse -> jobId: {}, job_salary: {}, job_min_salary: {}, job_max_salary: {}, resolved: {}",
+                            item.get("job_id"), item.get("job_salary"), item.get("job_min_salary"), item.get("job_max_salary"), resolvedSalary);
+                    dto.setSalary(resolvedSalary);
+
+                    //experience in months
+                    Map<String, Object> expMap = (Map<String, Object>) item.get("job_required_experience");
+                    if (expMap != null && expMap.get("required_experience_in_months") != null) {
+                        dto.setRequiredExperience(String.valueOf(expMap.get("required_experience_in_months")));
+                    } else {
+                        dto.setRequiredExperience("Not specified");
+                    }
+
                     dto.setExternalJobId(String.valueOf(item.get("job_id")));
                     dto.setTitle(String.valueOf(item.get("job_title")));
                     dto.setCompany(String.valueOf(item.get("employer_name")));
+                    dto.setEmploymentType(String.valueOf(item.get("job_employment_type")));
                     dto.setLocation(String.valueOf(item.get("job_city")));
                     dto.setPlatform("JSEARCH");
                     dto.setUrl(String.valueOf(item.get("job_apply_link")));
@@ -149,14 +166,60 @@ public class JobFetcherService {
                     listing.setUrl(dto.getUrl());
                     listing.setDescription(dto.getDescription());
                     listing.setSalary(dto.getSalary());
+                    listing.setEmploymentType(dto.getEmploymentType());
+                    listing.setRequiredExperience(dto.getRequiredExperience());
                     return jobListingRepository.save(listing);
                 });
     }
+
     private String trimDescription(String desc) {
         if (desc == null) return "No description available";
 
         return desc.length() > 200
                 ? desc.substring(0, 200) + "..."
                 : desc;
+    }
+
+    private Integer tryParseInt(String value) {
+        try {
+            String normalized = value.replaceAll("[^0-9]", "").trim();
+            if (normalized.isEmpty()) {
+                return null;
+            }
+            return Integer.parseInt(normalized);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private Integer resolveSalary(Map item) {
+        Integer directSalary = parseSalaryValue(item.get("job_salary"));
+        if (directSalary != null) {
+            return directSalary;
+        }
+
+        Integer minSalary = parseSalaryValue(item.get("job_min_salary"));
+        Integer maxSalary = parseSalaryValue(item.get("job_max_salary"));
+
+        if (minSalary != null && maxSalary != null) {
+            return (minSalary + maxSalary) / 2;
+        }
+        if (minSalary != null) {
+            return minSalary;
+        }
+        if (maxSalary != null) {
+            return maxSalary;
+        }
+        return null;
+    }
+
+    private Integer parseSalaryValue(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        if (value instanceof String) {
+            return tryParseInt((String) value);
+        }
+        return null;
     }
 }
